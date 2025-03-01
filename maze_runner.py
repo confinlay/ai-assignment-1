@@ -1,17 +1,46 @@
 #!/usr/bin/env python3
 """
 Maze Runner - Main script for running and comparing maze solving algorithms.
-This script provides a unified interface to run all maze solving algorithms
-and compare their performance.
+This script provides many command line arguments to allow for easy comaprison of
+the different maze solving algorithms under different conditions.
+
+This script compares different maze solving algorithms:
+
+1. Search Algorithms:
+   - Depth-First Search (DFS): Explores as far as possible along each branch before backtracking
+   - Breadth-First Search (BFS): Explores all neighbors at the present depth before moving to nodes at the next depth
+   - A* Search: Uses heuristics to find the shortest path more efficiently
+     - Manhattan distance: |x1-x2| + |y1-y2|
+     - Euclidean distance: sqrt((x1-x2)² + (y1-y2)²)
+     - Diagonal distance: max(|x1-x2|, |y1-y2|)
+
+2. Markov Decision Process (MDP) Algorithms:
+   - Value Iteration: Computes the optimal state values and derives a policy
+   - Policy Iteration: Iteratively improves a policy by policy evaluation and improvement
+
+Command-line arguments:
+  --sizes: List of maze sizes to test [default: 50, 100, 150, 200, 250]
+  --search: Run search algorithms (DFS, BFS, A*)
+  --mdp: Run MDP algorithms (Value Iteration, Policy Iteration)
+  --all: Run all algorithms
+  --astar-only: Run only A* algorithms with all heuristics
+  --astar-heuristic: Specify a single A* heuristic (manhattan, euclidean, diagonal)
+  --size: Maze size for visualization [default: 31]
+  --maze-type: Type of maze to generate (perfect, non_perfect) [default: perfect]
+  --removal-percentage: Percentage of walls to remove for non-perfect mazes [default: 0.1]
+  --csv: Export results to a CSV file
+
 """
 
 import time
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
+import os
 from typing import List, Dict, Tuple, Set
 from maze_generator import Maze
-from maze_solvers import MazeSolver, DFSMazeSolver, BFSMazeSolver, AStarMazeSolver, MazeVisualizer
+from maze_solvers import MazeSolver
 from mdp_solvers import ValueIterationSolver, PolicyIterationSolver
 
 
@@ -44,8 +73,8 @@ def run_algorithm(name: str, solver_func, **kwargs) -> Tuple[List[Tuple[int, int
 
 
 def compare_algorithms(maze_sizes: List[int], algorithms: List[Tuple[str, callable, Dict, str]], 
-                      metrics_to_compare: List[str] = ['nodes_explored', 'time_taken', 'path_length'],
-                      maze_type: str = 'perfect', maze_params: Dict = {}):
+                      metrics_to_compare: List[str] = ['nodes_explored', 'time_taken'],
+                      maze_type: str = 'perfect', maze_params: Dict = {}, export_csv: bool = False):
     """
     Compare multiple algorithms across different maze sizes.
     
@@ -55,6 +84,7 @@ def compare_algorithms(maze_sizes: List[int], algorithms: List[Tuple[str, callab
         metrics_to_compare: List of metric names to compare
         maze_type: Type of maze to generate ('perfect' or 'non_perfect')
         maze_params: Parameters for maze generation (e.g., removal_percentage)
+        export_csv: Whether to export results to a CSV file
     """
     # Initialize results dictionary
     results = {size: {} for size in maze_sizes}
@@ -88,58 +118,87 @@ def compare_algorithms(maze_sizes: List[int], algorithms: List[Tuple[str, callab
         # Create a visualizer for this maze
         start_pos = (1, 0)
         end_pos = (size-2, size-1)
-        visualizer = MazeVisualizer(maze, start_pos, end_pos)
         
         # Run each algorithm
-        algorithm_results = []
-        algorithm_names = []
-        algorithm_colors = []
-        
         for name, solver_func, kwargs, color in algorithms:
-            # Skip MDP algorithms for large mazes
-            if ('Value Iteration' in name or 'Policy Iteration' in name) and size > 51:
-                print(f"Skipping {name} for size {size} (too large for MDP algorithms)")
-                continue
-                
             try:
                 result = run_algorithm(name, solver_func, maze=maze, **kwargs)
                 results[size][name] = result[1]  # Store metrics
-                algorithm_results.append(result)
-                algorithm_names.append(name)
-                algorithm_colors.append(color)
             except Exception as e:
                 print(f"Error running {name} on size {size}: {e}")
                 results[size][name] = {'error': str(e)}
-        
-        # Visualize all results for this maze size
-        if algorithm_results:
-            print("About to visualize results...")
-            visualizer.visualize_all_searches(algorithm_results, algorithm_colors, algorithm_names)
-            print("Visualization complete")
     
-    # Create comparison plots for each metric
-    for metric in metrics_to_compare:
-        plt.figure(figsize=(10, 6))
+    # Create comparison plots for time_taken and nodes_explored
+    plt.figure(figsize=(10, 6))
+    for name, _, _, color in algorithms:
+        sizes = []
+        values = []
         
-        for name, _, _, color in algorithms:
-            sizes = []
-            values = []
-            
-            for size in maze_sizes:
-                if name in results[size] and metric in results[size][name] and not isinstance(results[size][name].get('error', None), str):
-                    sizes.append(size)
-                    values.append(results[size][name][metric])
-            
-            if sizes:
-                plt.plot(sizes, values, 'o-', label=name, color=color)
+        for size in maze_sizes:
+            if name in results[size] and 'time_taken' in results[size][name] and not isinstance(results[size][name].get('error', None), str):
+                sizes.append(size)
+                values.append(results[size][name]['time_taken'])
         
-        plt.xlabel('Maze Size')
-        plt.ylabel(metric.replace('_', ' ').title())
-        plt.title(f'Comparison of {metric.replace("_", " ").title()} across Algorithms')
-        plt.legend()
-        plt.grid(True)
-        plt.savefig(f'comparison_{maze_type}_{metric}.png')
-        plt.show()
+        if sizes:
+            plt.plot(sizes, values, 'o-', label=name, color=color)
+    
+    plt.xlabel('Maze Size')
+    plt.ylabel('Time Taken (s)')
+    plt.title('Comparison of Time Taken across Algorithms')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f'comparison_{maze_type}_time_taken.png')
+    plt.show()
+    
+    plt.figure(figsize=(10, 6))
+    for name, _, _, color in algorithms:
+        sizes = []
+        values = []
+        
+        for size in maze_sizes:
+            if name in results[size] and 'nodes_explored' in results[size][name] and not isinstance(results[size][name].get('error', None), str):
+                sizes.append(size)
+                values.append(results[size][name]['nodes_explored'])
+        
+        if sizes:
+            plt.plot(sizes, values, 'o-', label=name, color=color)
+    
+    plt.xlabel('Maze Size')
+    plt.ylabel('Nodes Explored')
+    plt.title('Comparison of Nodes Explored across Algorithms')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f'comparison_{maze_type}_nodes_explored.png')
+    plt.show()
+    
+    # Export results to CSV if requested
+    if export_csv:
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        csv_filename = f'maze_results_{maze_type}_{timestamp}.csv'
+        
+        with open(csv_filename, 'w', newline='') as csvfile:
+            # Determine all possible metrics across all results
+            all_metrics = set()
+            for size in results:
+                for alg in results[size]:
+                    if isinstance(results[size][alg], dict):
+                        all_metrics.update(results[size][alg].keys())
+            
+            # Create fieldnames for CSV
+            fieldnames = ['maze_size', 'algorithm'] + sorted(list(all_metrics))
+            
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            
+            # Write data rows
+            for size in sorted(results.keys()):
+                for alg in sorted(results[size].keys()):
+                    row = {'maze_size': size, 'algorithm': alg}
+                    if isinstance(results[size][alg], dict):
+                        row.update(results[size][alg])
+                    writer.writerow(row)
+        
+        print(f"Results exported to {csv_filename}")
     
     return results
 
@@ -149,19 +208,20 @@ def main():
     parser = argparse.ArgumentParser(description='Run and compare maze solving algorithms')
     
     # Maze size options
-    parser.add_argument('--sizes', type=int, nargs='+', default=[25, 51, 101],
+    parser.add_argument('--sizes', type=int, nargs='+', default=[50, 100, 150, 200, 250],
                         help='Maze sizes to test (odd numbers recommended)')
     
     # Algorithm selection
     parser.add_argument('--search', action='store_true', help='Run search algorithms (DFS, BFS, A*)')
     parser.add_argument('--mdp', action='store_true', help='Run MDP algorithms (Value Iteration, Policy Iteration)')
     parser.add_argument('--all', action='store_true', help='Run all algorithms')
+    parser.add_argument('--astar-only', action='store_true', help='Run only A* algorithms with all heuristics')
+    parser.add_argument('--astar-heuristic', type=str, choices=['manhattan', 'euclidean', 'diagonal'], 
+                        help='Specify a single A* heuristic to use')
     
-    # Visualization options
-    parser.add_argument('--visualize-only', action='store_true', 
-                        help='Only visualize a single maze solution')
+    # Maze size for single run
     parser.add_argument('--size', type=int, default=31, 
-                        help='Maze size for visualization only')
+                        help='Maze size for single run')
     
     # Maze type options
     parser.add_argument('--maze-type', type=str, choices=['perfect', 'non_perfect'], 
@@ -169,12 +229,20 @@ def main():
     parser.add_argument('--removal-percentage', type=float, default=0.1,
                         help='Percentage of internal walls to remove (0.0 to 1.0) for non-perfect mazes')
     
+    # Export options
+    parser.add_argument('--csv', action='store_true', help='Export results to a CSV file')
+    
     args = parser.parse_args()
     
     print("Starting maze_runner.py")
     
-    # If no algorithm type is specified, default to all
-    if not (args.search or args.mdp) and not args.all:
+    # If astar-only is specified, only run A* algorithms
+    if args.astar_only:
+        args.search = False
+        args.mdp = False
+        args.all = False
+    # If no algorithm type is specified and not astar-only, default to all
+    elif not (args.search or args.mdp) and not args.all:
         args.all = True
     
     # If --all is specified, run all algorithm types
@@ -189,12 +257,21 @@ def main():
         print("Adding search algorithms")
         # Search algorithms
         algorithms.extend([
-            ('DFS', lambda maze: DFSMazeSolver(maze).solve(), {}, 'red'),
-            ('BFS', lambda maze: BFSMazeSolver(maze).solve(), {}, 'blue'),
-            ('A* (Manhattan)', lambda maze: AStarMazeSolver(maze).solve(heuristic='manhattan'), {}, 'green'),
-            ('A* (Euclidean)', lambda maze: AStarMazeSolver(maze).solve(heuristic='euclidean'), {}, 'purple'),
-            ('A* (Diagonal)', lambda maze: AStarMazeSolver(maze).solve(heuristic='diagonal'), {}, 'orange')
+            ('DFS', lambda maze: MazeSolver(maze).dfs(), {}, 'red'),
+            ('BFS', lambda maze: MazeSolver(maze).bfs(), {}, 'blue'),
         ])
+        
+        # Add A* with specified heuristic or all heuristics
+        if args.astar_heuristic:
+            algorithms.append((f'A* ({args.astar_heuristic.capitalize()})', 
+                              lambda maze: MazeSolver(maze).astar(args.astar_heuristic), 
+                              {}, 'green'))
+        else:
+            algorithms.extend([
+                ('A* (Manhattan)', lambda maze: MazeSolver(maze).astar('manhattan'), {}, 'green'),
+                ('A* (Euclidean)', lambda maze: MazeSolver(maze).astar('euclidean'), {}, 'purple'),
+                ('A* (Diagonal)', lambda maze: MazeSolver(maze).astar('diagonal'), {}, 'orange')
+            ])
     
     if args.mdp:
         print("Adding MDP algorithms")
@@ -214,106 +291,43 @@ def main():
             ).solve(max_iterations=50, policy_eval_iterations=10), {}, 'teal')
         ])
     
+    # If astar-only is specified, only run A* algorithms
+    if args.astar_only:
+        print("Adding only A* algorithms")
+        if args.astar_heuristic:
+            algorithms = [(f'A* ({args.astar_heuristic.capitalize()})', 
+                          lambda maze: MazeSolver(maze).astar(args.astar_heuristic), 
+                          {}, 'green')]
+        else:
+            algorithms = [
+                ('A* (Manhattan)', lambda maze: MazeSolver(maze).astar('manhattan'), {}, 'green'),
+                ('A* (Euclidean)', lambda maze: MazeSolver(maze).astar('euclidean'), {}, 'purple'),
+                ('A* (Diagonal)', lambda maze: MazeSolver(maze).astar('diagonal'), {}, 'orange')
+            ]
+    
     # Maze generation parameters
     maze_params = {
         'removal_percentage': args.removal_percentage
     }
     
     print("Command parameters:")
-    print(f"  - visualize-only: {args.visualize_only}")
     print(f"  - maze-type: {args.maze_type}")
     print(f"  - removal-percentage: {args.removal_percentage}")
     print(f"  - search: {args.search}")
     print(f"  - mdp: {args.mdp}")
+    print(f"  - astar-only: {args.astar_only}")
+    print(f"  - astar-heuristic: {args.astar_heuristic}")
+    print(f"  - csv: {args.csv}")
     
-    # If visualize-only flag is set, just visualize a single maze with all algorithms
-    if args.visualize_only:
-        size = args.size
-        print(f"Visualizing maze of size {size}x{size} with all selected algorithms")
-        print(f"Maze type: {args.maze_type}")
-        
-        # Generate maze
-        print("Generating maze...")
-        maze_gen = Maze(size, size)
-        if args.maze_type == 'perfect':
-            maze = maze_gen.generate()
-        elif args.maze_type == 'non_perfect':
-            maze = maze_gen.generate_non_perfect(removal_percentage=args.removal_percentage)
-        print("Maze generation complete")
-        
-        # Analyze maze
-        print("Analyzing maze...")
-        analysis = maze_gen.analyze_maze()
-        print(f"Maze analysis:")
-        print(f"  - Shortest path length: {analysis['shortest_path_length']}")
-        print(f"  - Is perfect maze: {analysis['is_perfect']}")
-        print(f"  - Number of paths: {analysis['number_of_paths']}")
-        
-        # Find the optimal path
-        print("Finding shortest path...")
-        optimal_path = maze_gen._find_shortest_path()
-        print(f"Shortest path found with length: {len(optimal_path)}")
-        
-        # Create a visualizer
-        start_pos = (1, 0)
-        end_pos = (size-2, size-1)
-        visualizer = MazeVisualizer(maze, start_pos, end_pos)
-        
-        # Run each algorithm
-        algorithm_results = []
-        algorithm_names = []
-        algorithm_colors = []
-        
-        for name, solver_func, kwargs, color in algorithms:
-            # Skip MDP algorithms for large mazes
-            if ('Value Iteration' in name or 'Policy Iteration' in name) and size > 51:
-                print(f"Skipping {name} for size {size} (too large for MDP algorithms)")
-                continue
-                
-            try:
-                print(f"Running {name}...")
-                result = solver_func(maze=maze, **kwargs)
-                algorithm_results.append(result)
-                algorithm_names.append(name)
-                algorithm_colors.append(color)
-                
-                # Print metrics
-                path, metrics, visited = result
-                print(f"{name} Metrics:")
-                print(f"Nodes explored: {metrics['nodes_explored']}")
-                print(f"Time taken: {metrics['time_taken']:.4f} seconds")
-                print(f"Path length: {metrics['path_length']}")
-                
-                # Check if found path is optimal
-                if metrics['path_length'] > 0:
-                    is_optimal = metrics['path_length'] == analysis['shortest_path_length']
-                    print(f"Found path is optimal: {is_optimal}")
-                
-                if 'iterations' in metrics:
-                    print(f"Iterations: {metrics['iterations']}")
-                print()
-            except Exception as e:
-                print(f"Error running {name}: {e}")
-        
-        # Visualize all results
-        if algorithm_results:
-            print("About to visualize algorithm results...")
-            visualizer.visualize_all_searches(algorithm_results, algorithm_colors, algorithm_names)
-            print("Visualization of algorithm results complete")
-            
-            # Also show the maze with the optimal path highlighted
-            print("Showing maze with optimal path...")
-            maze_gen.show_maze(highlight_path=optimal_path)
-            print("Maze visualization complete")
-    else:
-        # Run comparison across all specified maze sizes
-        print("Running algorithm comparison across multiple maze sizes")
-        compare_algorithms(
-            args.sizes, 
-            algorithms, 
-            maze_type=args.maze_type,
-            maze_params=maze_params
-        )
+    # Run comparison across all specified maze sizes
+    print("Running algorithm comparison across multiple maze sizes")
+    compare_algorithms(
+        args.sizes, 
+        algorithms, 
+        maze_type=args.maze_type,
+        maze_params=maze_params,
+        export_csv=args.csv
+    )
     
     print("maze_runner.py execution complete")
 

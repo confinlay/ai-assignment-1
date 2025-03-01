@@ -268,7 +268,7 @@ class AStarMazeSolver(BaseMazeSolver):
         return [], metrics, visited  # No path found
 
 
-class MazeVisualizer:
+class MazeSolutionVisualizer:
     """Class for visualizing maze solutions."""
     
     def __init__(self, maze: List[List[int]], start: Tuple[int, int], end: Tuple[int, int]):
@@ -517,7 +517,7 @@ class MazeSolver:
         self.astar_solver = AStarMazeSolver(maze)
         
         # Initialize the visualizer
-        self.visualizer = MazeVisualizer(maze, self.start, self.end)
+        self.visualizer = MazeSolutionVisualizer(maze, self.start, self.end)
     
     def get_neighbors(self, pos: Tuple[int, int]) -> List[Tuple[int, int]]:
         """Delegate to the base solver implementation."""
@@ -566,9 +566,9 @@ if __name__ == "__main__":
     from maze_generator import Maze
     
     # Create a maze
-    size = 51  # More reasonable size for visualization
+    size = 150  # More reasonable size for visualization
     maze = Maze(size, size)
-    maze = maze.generate_non_perfect(removal_percentage=0.25)
+    maze = maze.generate_non_perfect(removal_percentage=0.3)
     
     # Create a solver
     solver = MazeSolver(maze)   
