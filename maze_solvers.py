@@ -2,18 +2,24 @@ from typing import List, Tuple, Dict, Set, Callable, Optional
 from collections import deque
 import heapq
 import time
-import matplotlib.pyplot as plt
 import numpy as np
+from abc import ABC, abstractmethod
 
-class MazeSolver:
+class BaseMazeSolver(ABC):
     """
-    A class containing different algorithms for solving mazes.
+    Abstract base class for maze solving algorithms.
     The maze is represented as a 2D list where:
     - 1 represents walls
     - 0 represents paths
     """
     
     def __init__(self, maze: List[List[int]]):
+        """
+        Initialize the maze solver with a maze.
+        
+        Args:
+            maze: 2D list representing the maze (1=wall, 0=path)
+        """
         self.maze = maze
         self.width = len(maze[0])
         self.height = len(maze)
@@ -23,7 +29,15 @@ class MazeSolver:
         self.end = (self.height-2, self.width-1)
     
     def get_neighbors(self, pos: Tuple[int, int]) -> List[Tuple[int, int]]:
-        """Returns valid neighboring positions (up, right, down, left)."""
+        """
+        Returns valid neighboring positions (up, right, down, left).
+        
+        Args:
+            pos: Current position as (row, col) tuple
+            
+        Returns:
+            List of valid neighboring positions
+        """
         x, y = pos
         # Check all four directions: up, right, down, left
         directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
@@ -38,26 +52,28 @@ class MazeSolver:
                 neighbors.append((new_x, new_y))
         
         return neighbors
-
-    # Heuristic functions
-    def manhattan_distance(self, pos: Tuple[int, int]) -> float:
-        """Calculate Manhattan distance heuristic."""
-        return abs(pos[0] - self.end[0]) + abs(pos[1] - self.end[1])
     
-    def euclidean_distance(self, pos: Tuple[int, int]) -> float:
-        """Calculate Euclidean distance heuristic (straight-line distance)."""
-        return ((pos[0] - self.end[0]) ** 2 + (pos[1] - self.end[1]) ** 2) ** 0.5
-    
-    def diagonal_distance(self, pos: Tuple[int, int]) -> float:
+    @abstractmethod
+    def solve(self) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
         """
-        Calculate Chebyshev distance heuristic.
-        This is the maximum of the horizontal and vertical distances.
+        Abstract method to be implemented by concrete solver classes.
+        
+        Returns:
+            Tuple containing:
+            - The path from start to end (if found)
+            - Dictionary with metrics (nodes explored, time taken, path length)
+            - Set of all visited nodes
         """
-        return max(abs(pos[0] - self.end[0]), abs(pos[1] - self.end[1]))
+        pass
 
-    def dfs(self) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+
+class DFSMazeSolver(BaseMazeSolver):
+    """Depth-First Search implementation for maze solving."""
+    
+    def solve(self) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
         """
-        Depth-First Search implementation.
+        Solve the maze using Depth-First Search.
+        
         Returns:
             Tuple containing:
             - The path from start to end (if found)
@@ -95,9 +111,14 @@ class MazeSolver:
         }
         return [], metrics, visited  # No path found
 
-    def bfs(self) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+
+class BFSMazeSolver(BaseMazeSolver):
+    """Breadth-First Search implementation for maze solving."""
+    
+    def solve(self) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
         """
-        Breadth-First Search implementation.
+        Solve the maze using Breadth-First Search.
+        
         Returns:
             Tuple containing:
             - The path from start to end (if found)
@@ -135,12 +156,53 @@ class MazeSolver:
         }
         return [], metrics, visited  # No path found
 
-    def astar(self, heuristic: str = 'manhattan') -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+
+class AStarMazeSolver(BaseMazeSolver):
+    """A* Search implementation for maze solving with configurable heuristics."""
+    
+    def manhattan_distance(self, pos: Tuple[int, int]) -> float:
         """
-        A* Search implementation with configurable heuristic.
+        Calculate Manhattan distance heuristic.
         
         Args:
-            heuristic (str): The heuristic to use - 'manhattan', 'euclidean', or 'diagonal'
+            pos: Current position
+            
+        Returns:
+            Manhattan distance to the goal
+        """
+        return abs(pos[0] - self.end[0]) + abs(pos[1] - self.end[1])
+    
+    def euclidean_distance(self, pos: Tuple[int, int]) -> float:
+        """
+        Calculate Euclidean distance heuristic (straight-line distance).
+        
+        Args:
+            pos: Current position
+            
+        Returns:
+            Euclidean distance to the goal
+        """
+        return ((pos[0] - self.end[0]) ** 2 + (pos[1] - self.end[1]) ** 2) ** 0.5
+    
+    def diagonal_distance(self, pos: Tuple[int, int]) -> float:
+        """
+        Calculate Chebyshev distance heuristic.
+        This is the maximum of the horizontal and vertical distances.
+        
+        Args:
+            pos: Current position
+            
+        Returns:
+            Diagonal distance to the goal
+        """
+        return max(abs(pos[0] - self.end[0]), abs(pos[1] - self.end[1]))
+    
+    def solve(self, heuristic: str = 'manhattan') -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+        """
+        Solve the maze using A* Search with configurable heuristic.
+        
+        Args:
+            heuristic: The heuristic to use - 'manhattan', 'euclidean', or 'diagonal'
             
         Returns:
             Tuple containing:
@@ -205,10 +267,32 @@ class MazeSolver:
         }
         return [], metrics, visited  # No path found
 
-    def visualize_path(self, path: List[Tuple[int, int]]):
+
+class MazeVisualizer:
+    """Class for visualizing maze solutions."""
+    
+    def __init__(self, maze: List[List[int]], start: Tuple[int, int], end: Tuple[int, int]):
+        """
+        Initialize the visualizer with maze data.
+        
+        Args:
+            maze: 2D list representing the maze
+            start: Start position as (row, col)
+            end: End position as (row, col)
+        """
+        self.maze = maze
+        self.height = len(maze)
+        self.width = len(maze[0])
+        self.start = start
+        self.end = end
+    
+    def visualize_path_terminal(self, path: List[Tuple[int, int]]):
         """
         Visualize the maze with the solved path in the terminal.
         Path cells are marked with '◈◈'
+        
+        Args:
+            path: List of coordinates forming the solution path
         """
         path_set = set(path)
         for i in range(self.height):
@@ -225,56 +309,65 @@ class MazeSolver:
                          color: str = 'blue', title: str = 'Maze Solution', block: bool = False):
         """
         Visualize the search results using matplotlib.
+        
         Args:
             path: List of coordinates forming the solution path
             visited: Set of all coordinates that were visited during search
             color: Base color for visualization (path will be this color, visited nodes a lighter shade)
             title: Title for the plot
             block: Whether to block execution until the figure is closed
-            
-        The path will be shown in the specified color, while visited nodes
-        that are not part of the path will be shown in a lighter shade.
         """
         try:
-            # Create a visualization array (0=path, 1=wall, 2=visited-not-in-path)
-            viz_array = np.array(self.maze, dtype=np.int8)
-            
-            # Mark visited cells
-            for y, x in visited:
-                if viz_array[y, x] == 0:  # Only mark if it's a path
-                    viz_array[y, x] = 2
-            
-            # Mark path cells
-            for y, x in path:
-                viz_array[y, x] = 3
-                
-            # Create a custom colormap
-            from matplotlib.colors import ListedColormap
-            
-            # Create color maps based on the selected color
+            import matplotlib.pyplot as plt
             import matplotlib.colors as mcolors
-            base_color = mcolors.to_rgb(color)
+            import numpy as np
             
-            # Create lighter version for visited cells
-            light_color = tuple([min(1.0, c + 0.5) for c in base_color])
+            # Create a mask for walls - this is separate from our visualization array
+            wall_mask = np.zeros((self.height, self.width), dtype=bool)
+            for y in range(self.height):
+                for x in range(self.width):
+                    if self.maze[y][x] == 1:  # If it's a wall
+                        wall_mask[y, x] = True
             
-            # Define the colormap: white, black, light_color, base_color
-            cmap = ListedColormap(['white', 'black', light_color, base_color])
+            # Create visualization array for paths/visited/solution
+            viz_array = np.zeros((self.height, self.width), dtype=np.int8)
+            
+            # Mark visited cells as 1
+            for y, x in visited:
+                if 0 <= y < self.height and 0 <= x < self.width:
+                    viz_array[y, x] = 1
+            
+            # Mark path cells as 2
+            for y, x in path:
+                if 0 <= y < self.height and 0 <= x < self.width:
+                    viz_array[y, x] = 2
             
             # Create the figure
             plt.figure(figsize=(10, 10))
             
-            # Plot the maze
-            plt.imshow(viz_array, cmap=cmap)
+            # Create colormap for paths/visited/solution
+            base_color = mcolors.to_rgb(color)
+            light_color = tuple([min(1.0, c + 0.5) for c in base_color])
+            path_colors = ['white', light_color, base_color]
             
-            # Mark start and end
+            # Plot the maze - first the paths/visited/solution
+            img = plt.imshow(viz_array, cmap=mcolors.ListedColormap(path_colors), 
+                             vmin=0, vmax=2)
+            
+            # Now overlay walls as pure black
+            # This is the key - we're creating a masked array where walls are explicitly set black
+            plt.imshow(np.ones_like(viz_array), 
+                       cmap=mcolors.ListedColormap(['black']),
+                       alpha=wall_mask.astype(float))  # Only show black where wall_mask is True
+            
+            # Add start and end markers
             plt.plot(self.start[1], self.start[0], 'go', markersize=8)  # Start in green
             plt.plot(self.end[1], self.end[0], 'ro', markersize=8)      # End in red
             
             # Remove axes and ticks
             plt.axis('off')
             
-            # Add title and legend
+            # Add title
             plt.title(title)
             
             # Add a custom legend
@@ -287,10 +380,11 @@ class MazeSolver:
                 Patch(facecolor='green', edgecolor='black', label='Start'),
                 Patch(facecolor='red', edgecolor='black', label='End')
             ]
-            plt.legend(handles=legend_elements, loc='upper center', bbox_to_anchor=(0.5, -0.05), ncol=3)
+            plt.legend(handles=legend_elements, loc='upper center', 
+                      bbox_to_anchor=(0.5, -0.05), ncol=3)
             
             plt.tight_layout()
-            plt.show(block=True)  # Always block to ensure the window is closed before continuing
+            plt.show(block=block)
             
         except ImportError:
             print("Matplotlib is required for visualization.")
@@ -306,13 +400,21 @@ class MazeSolver:
             titles: List of titles for each algorithm
         """
         try:
+            import matplotlib.pyplot as plt
             import matplotlib.colors as mcolors
-            from matplotlib.colors import ListedColormap
+            import numpy as np
             from matplotlib.patches import Patch
+            
+            # Create a mask for walls - this is separate from our visualization array
+            wall_mask = np.zeros((self.height, self.width), dtype=bool)
+            for y in range(self.height):
+                for x in range(self.width):
+                    if self.maze[y][x] == 1:  # If it's a wall
+                        wall_mask[y, x] = True
             
             # Setup the figure
             num_plots = len(algorithm_results)
-            rows = (num_plots + 2) // 3  # Calculate number of rows needed (ceiling division)
+            rows = (num_plots + 2) // 3  # Calculate number of rows needed
             cols = min(3, num_plots)     # Max 3 columns
             
             fig, axs = plt.subplots(rows, cols, figsize=(6*cols, 6*rows))
@@ -322,32 +424,37 @@ class MazeSolver:
                 axs = axs.flatten()  # Convert 2D array to 1D for easy iteration
             
             # Create plots for each algorithm
-            for i, ((path, _, visited), color, title) in enumerate(zip(algorithm_results, colors, titles)):
+            for i, ((path, metrics, visited), color, title) in enumerate(zip(algorithm_results, colors, titles)):
                 ax = axs[i]
                 
-                # Create a visualization array (0=path, 1=wall, 2=visited-not-in-path, 3=solution path)
-                viz_array = np.array(self.maze, dtype=np.int8)
+                # Create visualization array for paths/visited/solution
+                viz_array = np.zeros((self.height, self.width), dtype=np.int8)
                 
-                # Mark visited cells
+                # Mark visited cells as 1
                 for y, x in visited:
-                    if viz_array[y, x] == 0:  # Only mark if it's a path
+                    if 0 <= y < self.height and 0 <= x < self.width:
+                        viz_array[y, x] = 1
+                
+                # Mark path cells as 2
+                for y, x in path:
+                    if 0 <= y < self.height and 0 <= x < self.width:
                         viz_array[y, x] = 2
                 
-                # Mark path cells
-                for y, x in path:
-                    viz_array[y, x] = 3
-                    
-                # Create color maps based on the selected color
+                # Create colormap for paths/visited/solution
                 base_color = mcolors.to_rgb(color)
                 light_color = tuple([min(1.0, c + 0.5) for c in base_color])
+                path_colors = ['white', light_color, base_color]
                 
-                # Define the colormap: white, black, light_color, base_color
-                cmap = ListedColormap(['white', 'black', light_color, base_color])
+                # Plot the maze - first the paths/visited/solution
+                img = ax.imshow(viz_array, cmap=mcolors.ListedColormap(path_colors), 
+                               vmin=0, vmax=2)
                 
-                # Plot the maze
-                ax.imshow(viz_array, cmap=cmap)
+                # Now overlay walls as pure black
+                ax.imshow(np.ones_like(viz_array), 
+                         cmap=mcolors.ListedColormap(['black']),
+                         alpha=wall_mask.astype(float))  # Only show black where wall_mask is True
                 
-                # Mark start and end
+                # Add start and end markers
                 ax.plot(self.start[1], self.start[0], 'go', markersize=8)
                 ax.plot(self.end[1], self.end[0], 'ro', markersize=8)
                 
@@ -355,7 +462,9 @@ class MazeSolver:
                 ax.axis('off')
                 
                 # Add title with metrics
-                ax.set_title(f"{title}\nPath Length: {len(path)}\nNodes Explored: {len(visited)}")
+                path_length = len(path) if path else 0
+                nodes_explored = metrics.get('nodes_explored', len(visited))
+                ax.set_title(f"{title}\nPath Length: {path_length}\nNodes Explored: {nodes_explored}")
             
             # Hide any unused subplots
             for j in range(i+1, len(axs)):
@@ -382,14 +491,84 @@ class MazeSolver:
             print("Matplotlib is required for visualization.")
             print("Install it with: pip install matplotlib")
 
+
+class MazeSolver:
+    """
+    A facade class that provides a unified interface to all maze solving algorithms.
+    This maintains backward compatibility with the original code.
+    """
+    
+    def __init__(self, maze: List[List[int]]):
+        """
+        Initialize the maze solver with a maze.
+        
+        Args:
+            maze: 2D list representing the maze (1=wall, 0=path)
+        """
+        self.maze = maze
+        self.width = len(maze[0])
+        self.height = len(maze)
+        self.start = (1, 0)
+        self.end = (self.height-2, self.width-1)
+        
+        # Initialize the specific solvers
+        self.dfs_solver = DFSMazeSolver(maze)
+        self.bfs_solver = BFSMazeSolver(maze)
+        self.astar_solver = AStarMazeSolver(maze)
+        
+        # Initialize the visualizer
+        self.visualizer = MazeVisualizer(maze, self.start, self.end)
+    
+    def get_neighbors(self, pos: Tuple[int, int]) -> List[Tuple[int, int]]:
+        """Delegate to the base solver implementation."""
+        return self.dfs_solver.get_neighbors(pos)
+    
+    def manhattan_distance(self, pos: Tuple[int, int]) -> float:
+        """Delegate to the A* solver implementation."""
+        return self.astar_solver.manhattan_distance(pos)
+    
+    def euclidean_distance(self, pos: Tuple[int, int]) -> float:
+        """Delegate to the A* solver implementation."""
+        return self.astar_solver.euclidean_distance(pos)
+    
+    def diagonal_distance(self, pos: Tuple[int, int]) -> float:
+        """Delegate to the A* solver implementation."""
+        return self.astar_solver.diagonal_distance(pos)
+    
+    def dfs(self) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+        """Run the DFS algorithm."""
+        return self.dfs_solver.solve()
+    
+    def bfs(self) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+        """Run the BFS algorithm."""
+        return self.bfs_solver.solve()
+    
+    def astar(self, heuristic: str = 'manhattan') -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+        """Run the A* algorithm with the specified heuristic."""
+        return self.astar_solver.solve(heuristic)
+    
+    def visualize_path(self, path: List[Tuple[int, int]]):
+        """Visualize the path in the terminal."""
+        self.visualizer.visualize_path_terminal(path)
+    
+    def visualize_search(self, path: List[Tuple[int, int]], visited: Set[Tuple[int, int]], 
+                         color: str = 'blue', title: str = 'Maze Solution', block: bool = False):
+        """Visualize the search results."""
+        self.visualizer.visualize_search(path, visited, color, title, block)
+    
+    def visualize_all_searches(self, algorithm_results, colors, titles):
+        """Visualize multiple search results."""
+        self.visualizer.visualize_all_searches(algorithm_results, colors, titles)
+
+
 # Example usage
 if __name__ == "__main__":
     from maze_generator import Maze
     
     # Create a maze
-    size = 250  # Smaller size for quick visualization
+    size = 51  # More reasonable size for visualization
     maze = Maze(size, size)
-    maze = maze.generate()
+    maze = maze.generate_non_perfect(removal_percentage=0.25)
     
     # Create a solver
     solver = MazeSolver(maze)   
