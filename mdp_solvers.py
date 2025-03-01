@@ -6,8 +6,8 @@ from maze_solvers import BaseMazeSolver
 class MDPMazeSolver(BaseMazeSolver):
     """Base class for MDP maze solvers."""
     
-    def __init__(self, maze: List[List[int]], discount_factor: float = 0.9, 
-                 reward_exit: float = 1.0, reward_step: float = -0.01):
+    def __init__(self, maze: List[List[int]], discount_factor: float = 0.99, 
+                 reward_exit: float = 100.0, reward_step: float = -0.01):
         """Initialize the MDP maze solver."""
         super().__init__(maze)
         self.discount = discount_factor
@@ -93,7 +93,7 @@ class MDPMazeSolver(BaseMazeSolver):
 class ValueIterationSolver(MDPMazeSolver):
     """MDP solver using Value Iteration algorithm."""
     
-    def solve(self, epsilon: float = 0.001, max_iterations: int = 1000) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+    def solve(self, epsilon: float = 0.001, max_iterations: int = 2000) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
         """Solve the maze using Value Iteration."""
         start_time = time.time()
         iterations = 0
@@ -177,7 +177,7 @@ class ValueIterationSolver(MDPMazeSolver):
 class PolicyIterationSolver(MDPMazeSolver):
     """MDP solver using Policy Iteration algorithm."""
     
-    def solve(self, max_iterations: int = 100, policy_eval_iterations: int = 20) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+    def solve(self, max_iterations: int = 200, policy_eval_iterations: int = 20) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
         """Solve the maze using Policy Iteration."""
         start_time = time.time()
         iterations = 0
@@ -277,15 +277,13 @@ if __name__ == "__main__":
     from maze_solvers import MazeSolutionVisualizer
     
     # Create a maze
-    size = 20  # Small size for quick testing
+    size = 60  # Small size for quick testing
     print(f"Creating a {size}x{size} maze...")
     maze_gen = Maze(size, size)
-    maze = maze_gen.generate_non_perfect(removal_percentage=0.2)
+    maze = maze_gen.generate_imperfect(removal_percentage=0.2)
     
     # Create visualizer
-    start_pos = (1, 0)
-    end_pos = (size-1, size)
-    visualizer = MazeSolutionVisualizer(maze, start_pos, end_pos)
+    visualizer = MazeSolutionVisualizer(maze, maze_gen.entrance, maze_gen.exit)
     
     # Test Value Iteration
     print("\nRunning Value Iteration...")

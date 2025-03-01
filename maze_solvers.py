@@ -81,35 +81,41 @@ class DFSMazeSolver(BaseMazeSolver):
             - Set of all visited nodes
         """
         start_time = time.time()
-        stack = [(self.start, [self.start])]
+        stack = [self.start]
         visited = {self.start}
         nodes_explored = 0
+        parent = {self.start: None}  
+        found_goal = False
         
         while stack:
-            current, path = stack.pop()
+            current = stack.pop() 
             nodes_explored += 1
             
             if current == self.end:
-                end_time = time.time()
-                metrics = {
-                    'nodes_explored': nodes_explored,
-                    'time_taken': end_time - start_time,
-                    'path_length': len(path)
-                }
-                return path, metrics, visited
+                found_goal = True
+                break
             
             for neighbor in self.get_neighbors(current):
                 if neighbor not in visited:
                     visited.add(neighbor)
-                    stack.append((neighbor, path + [neighbor]))
+                    parent[neighbor] = current  
+                    stack.append(neighbor)
+        
+        path = []
+        if found_goal:
+            current = self.end
+            while current:
+                path.append(current)
+                current = parent[current]
+            path.reverse()
         
         end_time = time.time()
         metrics = {
             'nodes_explored': nodes_explored,
             'time_taken': end_time - start_time,
-            'path_length': 0  # No path found
+            'path_length': len(path)
         }
-        return [], metrics, visited  # No path found
+        return path, metrics, visited
 
 
 class BFSMazeSolver(BaseMazeSolver):
@@ -568,7 +574,7 @@ if __name__ == "__main__":
     # Create a maze
     size = 150  # More reasonable size for visualization
     maze = Maze(size, size)
-    maze = maze.generate_non_perfect(removal_percentage=0.3)
+    maze = maze.generate_imperfect(removal_percentage=0.3)
     
     # Create a solver
     solver = MazeSolver(maze)   

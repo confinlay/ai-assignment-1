@@ -26,7 +26,7 @@ Command-line arguments:
   --astar-only: Run only A* algorithms with all heuristics
   --astar-heuristic: Specify a single A* heuristic (manhattan, euclidean, diagonal)
   --size: Maze size for visualization [default: 31]
-  --maze-type: Type of maze to generate (perfect, non_perfect) [default: perfect]
+  --maze-type: Type of maze to generate (perfect, imperfect) [default: perfect]
   --removal-percentage: Percentage of walls to remove for non-perfect mazes [default: 0.1]
   --csv: Export results to a CSV file
 
@@ -82,7 +82,7 @@ def compare_algorithms(maze_sizes: List[int], algorithms: List[Tuple[str, callab
         maze_sizes: List of maze sizes to test
         algorithms: List of tuples (name, solver_func, kwargs, color)
         metrics_to_compare: List of metric names to compare
-        maze_type: Type of maze to generate ('perfect' or 'non_perfect')
+        maze_type: Type of maze to generate ('perfect' or 'imperfect')
         maze_params: Parameters for maze generation (e.g., removal_percentage)
         export_csv: Whether to export results to a CSV file
     """
@@ -100,24 +100,13 @@ def compare_algorithms(maze_sizes: List[int], algorithms: List[Tuple[str, callab
         if maze_type == 'perfect':
             maze = maze_gen.generate()
             print("Generated a perfect maze (single solution path)")
-        elif maze_type == 'non_perfect':
+        elif maze_type == 'imperfect':
             removal_percentage = maze_params.get('removal_percentage', 0.1)
-            maze = maze_gen.generate_non_perfect(removal_percentage=removal_percentage)
+            maze = maze_gen.generate_imperfect(removal_percentage=removal_percentage)
             print(f"Generated a non-perfect maze with {removal_percentage*100:.1f}% walls removed")
         else:
             print(f"Unknown maze type: {maze_type}. Using perfect maze instead.")
             maze = maze_gen.generate()
-        
-        # Analyze the maze
-        maze_analysis = maze_gen.analyze_maze()
-        print(f"Maze analysis:")
-        print(f"  - Shortest path length: {maze_analysis['shortest_path_length']}")
-        print(f"  - Is perfect maze: {maze_analysis['is_perfect']}")
-        print(f"  - Number of paths: {maze_analysis['number_of_paths']}")
-        
-        # Create a visualizer for this maze
-        start_pos = (1, 0)
-        end_pos = (size-2, size-1)
         
         # Run each algorithm
         for name, solver_func, kwargs, color in algorithms:
@@ -224,7 +213,7 @@ def main():
                         help='Maze size for single run')
     
     # Maze type options
-    parser.add_argument('--maze-type', type=str, choices=['perfect', 'non_perfect'], 
+    parser.add_argument('--maze-type', type=str, choices=['perfect', 'imperfect'], 
                         default='perfect', help='Type of maze to generate')
     parser.add_argument('--removal-percentage', type=float, default=0.1,
                         help='Percentage of internal walls to remove (0.0 to 1.0) for non-perfect mazes')
@@ -277,18 +266,8 @@ def main():
         print("Adding MDP algorithms")
         # MDP algorithms with optimized parameters
         algorithms.extend([
-            ('Value Iteration', lambda maze: ValueIterationSolver(
-                maze, 
-                discount_factor=0.95, 
-                reward_exit=10.0,
-                reward_step=-0.01
-            ).solve(epsilon=0.001, max_iterations=200), {}, 'brown'),
-            ('Policy Iteration', lambda maze: PolicyIterationSolver(
-                maze,
-                discount_factor=0.95,
-                reward_exit=10.0,
-                reward_step=-0.01
-            ).solve(max_iterations=50, policy_eval_iterations=10), {}, 'teal')
+            ('Value Iteration', lambda maze: ValueIterationSolver(maze).solve(), {}, 'brown'),
+            ('Policy Iteration', lambda maze: PolicyIterationSolver(maze).solve(), {}, 'teal')
         ])
     
     # If astar-only is specified, only run A* algorithms
