@@ -7,7 +7,7 @@ class MDPMazeSolver(BaseMazeSolver):
     """Base class for MDP maze solvers."""
     
     def __init__(self, maze: List[List[int]], discount_factor: float = 0.99, 
-                 reward_exit: float = 100.0, reward_step: float = -0.01):
+                 reward_exit: float = 100.0, reward_step: float = 0.00):
         """Initialize the MDP maze solver."""
         super().__init__(maze)
         self.discount = discount_factor
@@ -177,8 +177,14 @@ class ValueIterationSolver(MDPMazeSolver):
 class PolicyIterationSolver(MDPMazeSolver):
     """MDP solver using Policy Iteration algorithm."""
     
-    def solve(self, max_iterations: int = 200, policy_eval_iterations: int = 20) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
-        """Solve the maze using Policy Iteration."""
+    def solve(self, max_iterations: int = 1000, theta: float = 0.001, max_eval_iterations: int = 1000) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
+        """Solve the maze using Policy Iteration.
+        
+        Args:
+            max_iterations: Maximum number of policy iteration cycles
+            theta: Convergence threshold for policy evaluation
+            max_eval_iterations: Maximum iterations for each policy evaluation phase
+        """
         start_time = time.time()
         iterations = 0
         policy_stable = False
@@ -194,8 +200,12 @@ class PolicyIterationSolver(MDPMazeSolver):
         
         # Policy Iteration
         while not policy_stable and iterations < max_iterations:
-            # Policy Evaluation
-            for _ in range(policy_eval_iterations):
+            # Policy Evaluation (run until convergence)
+            eval_iterations = 0
+            delta = float('inf')
+            
+            while delta > theta and eval_iterations < max_eval_iterations:
+                delta = 0
                 new_utilities = np.copy(self.utilities)
                 
                 for i in range(self.height):
@@ -217,10 +227,15 @@ class PolicyIterationSolver(MDPMazeSolver):
                         
                         # Update utility
                         next_utility = self.utilities[next_state[0], next_state[1]]
-                        new_utilities[i, j] = reward + self.discount * next_utility
+                        new_value = reward + self.discount * next_utility
+                        new_utilities[i, j] = new_value
+                        
+                        # Track maximum change
+                        delta = max(delta, abs(new_value - self.utilities[i, j]))
                 
                 # Update utilities
                 self.utilities = new_utilities
+                eval_iterations += 1
             
             # Policy Improvement
             policy_stable = True
@@ -265,7 +280,8 @@ class PolicyIterationSolver(MDPMazeSolver):
             'nodes_explored': len(visited_states),
             'time_taken': end_time - start_time,
             'path_length': len(path),
-            'iterations': iterations
+            'iterations': iterations,
+            'policy_eval_iterations': eval_iterations
         }
         
         return path, metrics, visited_states
@@ -277,10 +293,10 @@ if __name__ == "__main__":
     from maze_solvers import MazeSolutionVisualizer
     
     # Create a maze
-    size = 60  # Small size for quick testing
+    size = 150  # Small size for quick testing
     print(f"Creating a {size}x{size} maze...")
     maze_gen = Maze(size, size)
-    maze = maze_gen.generate_imperfect(removal_percentage=0.2)
+    maze = maze_gen.generate_imperfect(removal_percentage=0.1)
     
     # Create visualizer
     visualizer = MazeSolutionVisualizer(maze, maze_gen.entrance, maze_gen.exit)

@@ -98,16 +98,18 @@ In \autoref{tab:astar_comparison}, we observe that A* takes roughly 1.75 times l
 
 \begin{table}[h]
     \centering
-    \begin{tabular}{|l|c|c|c|}
+    \begin{tabular}{|l|c|c|}
         \hline
-        \textbf{Metric} & \textbf{A* vs DFS} & \textbf{A* vs BFS} \\
+        \multicolumn{3}{|c|}{\textbf{Average Relative Performance (ratio of A* to other algorithms)}} \\
+        \hline
+        \textbf{Metric} & \textbf{A* / DFS ratio} & \textbf{A* / BFS ratio} \\
         \hline
         Nodes Explored & 1.0240 & 0.9816 \\
         \hline
         Time Taken & 1.7557 & 1.6262 \\
         \hline
     \end{tabular}
-    \caption{Average relative performance of A* compared to other algorithms (perfect maze)}
+    \caption{Average relative performance of A* compared to other algorithms (perfect maze). Values represent the ratio of A* to the compared algorithm (values $> 1$ mean A* performs worse).}
     \label{tab:astar_comparison}
 \end{table}
 
@@ -133,34 +135,112 @@ In order to observe the differences between the algorithms in terms of optimalit
     \label{fig:search_comparison_imperfect}
 \end{figure}
 
-Looking at \autoref{fig:time_taken_imperfect_search}, we see that A* takes the longest out of all of the algorithms, nudging ahead of BFS. This is now more in line with the expected complexity of these algorithms - BFS shows a broadly linear time complexity ($O(n)$) while A* is more like $O(n \log n)$. The time taken for DFS to find a solution is now much quicker, as it benefits from finding \textit{any} path to the goal.
+Looking at \autoref{fig:time_taken_imperfect_search}, we see that A* takes the longest out of all of the algorithms, nudging ahead of BFS. This is now more in line with the expected complexity of these algorithms - BFS shows a broadly linear time complexity ($O(n)$) while A* is more like $O(n \log n)$ due to the max heap it maintains for selecting the next node to explore. The time taken for DFS to find a solution is now much quicker, as it benefits from finding \textit{any} path to the goal.
 
 If we now consider the number of nodes explored, as well as the optimality of the path found, the results are somewhat flipped on their head. First, considering path length, BFS and A* are both \textit{optimal}, and will always find the shortest path to the goal. This is not true for DFS. On average, across all maze sizes tested, the path length found by DFS was on average \textbf{12.05 times longer} than the optimal paths found by BFS and A*.
 
-If we turn to the number of nodes expored, DFS naturally explores the least. However, among the optimal algorithms, A* explores fewer nodes than BFS, guided by the heuristic which is now more helpful given the altered structure of the maze. These results are summarised in \autoref{tab:astar_comparison_imperfect}.
-
-
+If we turn to the number of nodes expored, DFS naturally explores the least. However, among the optimal algorithms, A* explores fewer nodes than BFS, guided by the heuristic which is now more helpful given the altered structure of the maze. These results are summarised in \autoref{tab:astar_comparison_imperfect} and illustrated in \autoref{fig:solutions_imperfect}.
 \begin{table}[h]
     \centering
-    \begin{tabular}{|l|c|c|c|}
+    \begin{tabular}{|l|c|c|}
         \hline
-        \textbf{Metric} & \textbf{A* vs DFS} & \textbf{A* vs BFS} \\
+        \multicolumn{3}{|c|}{\textbf{Average Relative Performance (ratio of A* to other algorithms)}} \\
+        \hline
+        \textbf{Metric} & \textbf{A* / DFS ratio} & \textbf{A* / BFS ratio} \\
         \hline
         Nodes Explored & 9.2184 & 0.7768 \\
         \hline
         Time Taken & 21.0405 & 1.6368 \\
         \hline
     \end{tabular}
-    \caption{Average relative performance of A* compared to other algorithms (imperfect maze)}
+    \caption{Average relative performance of A* compared to other algorithms (imperfect maze). Values represent the ratio of A* to the compared algorithm (values $> 1$ mean A* performs worse).}
     \label{tab:astar_comparison_imperfect}
 \end{table}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{imperfect maze solutions search.png}
+    \caption{Solutions from DFS, BFS, and A* for an Imperfect Maze}
+    \label{fig:solutions_imperfect}
+\end{figure}
+
 \subsection{Comparison of A* Heuristics}
 
+In this section, we motivate the use of the Manhattan distance as a heuristic for the A* algorithm. To do this, we compare the performance of A* using the Manhattan distance, Euclidean distance, and Chebyshev distance. These heuristics are defined as follows:
+\vspace{1em}
+
+\textbf{Manhattan distance: } 
+$$h(n) = |x_n - x_{goal}| + |y_n - y_{goal}|$$
+
+\textbf{Euclidean distance: } 
+$$h(n) = \sqrt{(x_n - x_{goal})^2 + (y_n - y_{goal})^2}$$
+
+\textbf{Chebyshev distance: } 
+$$h(n) = \max(|x_n - x_{goal}|, |y_n - y_{goal}|)$$
+
+When tested on imperfect mazes of sizes between 50 and 1000 like in the previous section, the manhattan distance heuristic consistently outperformed the other two. The results are summarised in \autoref{tab:heuristic_comparison}.
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \multicolumn{3}{|c|}{\textbf{Average Relative Performance (ratio to Manhattan)}} \\
+        \hline
+        \textbf{Metric} & \textbf{A* (Euclidean)} & \textbf{A* (Diagonal)} \\
+        \hline
+        Nodes Explored & 1.1818 & 1.2136 \\
+        \hline
+        Time Taken & 1.1759 & 1.2293 \\
+        \hline
+    \end{tabular}
+    \caption{Comparison of different heuristics for A* algorithm on imperfect mazes. Values represent the ratio to Manhattan distance (values $> 1$ mean Manhattan performs better).}
+    \label{tab:heuristic_comparison}
+\end{table}
+
 \section{Markov Decision Processes}
+In this section, we compare the performance of two different algorithms for solving MDPs, namely, policy iteration and value iteration. 
 
-\subsection{Implementation Decisions}
+\subsection{Implementation Details}
+When interpreting this problem as a Markov Decision Process, we define the state space as all of the accessible cells in the maze. The action space is the set of up, down, left, and right movements. The only reward function required is the reward for exiting the maze, which we set to 100.0. A discount factor of 0.99 encourages the agent to find the shortest path to the exit.
 
+Initially, we had used a negative reward for each step taken to encourage the agent to find the shortest path to the exit. However, since there are no other factors at play in this problem (i.e. no other rewards, no probabilistic movement, etc.), the discount factor alone is enough to encourage the agent to find the shortest path to the exit.
+
+For Value Iteration, our convergence criterion is $\epsilon = 0.001$, meaning that we continue iterating until the maximum change in utility between iterations is less than 0.001.
+For Policy Iteration, we simply continue until the policy does not change between runs. However, for the policy evaluation step, we continue iterating until that same convergence criterion is met.
 \subsection{Policy Iteration vs. Value Iteration}
+
+To compare the performance of the two algorithms, we test them on a range of imperfect maze sizes from (25x25) to (150x150) in increments of 25. The results can be seen in \autoref{fig:policy_iteration_vs_value_iteration}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{Value iteration vs. policy time .png}
+    \caption{Comparison of Policy Iteration and Value Iteration}
+    \label{fig:policy_iteration_vs_value_iteration}
+\end{figure}
+
+Policy iteration is clearly slower than value iteration thanks to its expensive policy evaluation step. Although it may have stronger convergence guarantees in general, for the simple case of a maze, value iteration is a more appropriate solution.
+
+It's also very clear that these algorithms take far longer than the search algorithms to find a solution. Indeed, the do always find the optimal solution, but they explore all possible states and perform many updates to do this. We discuss this in the next section.
+
+\section{Search Algorithms vs. MDPs}
+
+\autoref{fig:all_algos_time} shows the disparity in time taken between the search algorithms and the MDP algorithms. The MDP algorithms are incredibly inefficient for this problem, and there is no reason to use them here without the following additions:
+
+\begin{itemize}
+    \item \textbf{Other rewards:} If there were other rewards in the maze (e.g. diamonds to find, or pits to avoid), the MDP algorithms would be uniquely suited to solve this problem in a way that search algorithms cannot.
+    \item \textbf{Probabilistic movement:} If the agent was inclined to move with some randomness (e.g. when wanting to move forward, you move left with some probability), the MDP algorithms would be able to plan based on this information.
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\textwidth]{all algos time.png}
+    \caption{Comparison of all algorithms}
+    \label{fig:all_algos_time}
+\end{figure}
+
+However, in the absence of these features, there really is no reason to use MDPs here. The search algorithms have demonstrated that they are the best approach performing straight forward pathfinding, which is exactly what we have here.
+
+
+
 
 \end{document}

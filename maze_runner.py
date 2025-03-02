@@ -160,6 +160,72 @@ def compare_algorithms(maze_sizes: List[int], algorithms: List[Tuple[str, callab
     plt.savefig(f'comparison_{maze_type}_nodes_explored.png')
     plt.show()
     
+    # Calculate relative performance metrics for A* heuristics
+    astar_algorithms = [alg[0] for alg in algorithms if 'A*' in alg[0]]
+    if len(astar_algorithms) > 1:
+        print("\nCalculating relative performance of A* heuristics...")
+        
+        # Initialize dictionaries to store relative metrics
+        relative_nodes = {alg1: {alg2: [] for alg2 in astar_algorithms} for alg1 in astar_algorithms}
+        relative_time = {alg1: {alg2: [] for alg2 in astar_algorithms} for alg1 in astar_algorithms}
+        
+        # Calculate relative metrics for each maze size
+        for size in maze_sizes:
+            valid_results = True
+            for alg in astar_algorithms:
+                if (alg not in results[size] or 
+                    'nodes_explored' not in results[size][alg] or 
+                    'time_taken' not in results[size][alg] or
+                    isinstance(results[size][alg].get('error', None), str)):
+                    valid_results = False
+                    break
+            
+            if valid_results:
+                for alg1 in astar_algorithms:
+                    for alg2 in astar_algorithms:
+                        # Calculate relative nodes explored (alg1 / alg2)
+                        rel_nodes = results[size][alg1]['nodes_explored'] / results[size][alg2]['nodes_explored']
+                        relative_nodes[alg1][alg2].append(rel_nodes)
+                        
+                        # Calculate relative time taken (alg1 / alg2)
+                        rel_time = results[size][alg1]['time_taken'] / results[size][alg2]['time_taken']
+                        relative_time[alg1][alg2].append(rel_time)
+        
+        # Calculate average relative metrics
+        avg_relative_nodes = {alg1: {alg2: np.mean(relative_nodes[alg1][alg2]) if relative_nodes[alg1][alg2] else float('nan') 
+                                    for alg2 in astar_algorithms} 
+                             for alg1 in astar_algorithms}
+        
+        avg_relative_time = {alg1: {alg2: np.mean(relative_time[alg1][alg2]) if relative_time[alg1][alg2] else float('nan') 
+                                   for alg2 in astar_algorithms} 
+                            for alg1 in astar_algorithms}
+        
+        # Print average relative metrics
+        print("\nAverage Relative Nodes Explored (row / column):")
+        print("-" * 80)
+        header = "Algorithm".ljust(20) + " | " + " | ".join([alg.ljust(15) for alg in astar_algorithms])
+        print(header)
+        print("-" * len(header))
+        
+        for alg1 in astar_algorithms:
+            row = alg1.ljust(20) + " | "
+            for alg2 in astar_algorithms:
+                value = avg_relative_nodes[alg1][alg2]
+                row += f"{value:.4f}".ljust(15) + " | "
+            print(row)
+        
+        print("\nAverage Relative Time Taken (row / column):")
+        print("-" * 80)
+        print(header)
+        print("-" * len(header))
+        
+        for alg1 in astar_algorithms:
+            row = alg1.ljust(20) + " | "
+            for alg2 in astar_algorithms:
+                value = avg_relative_time[alg1][alg2]
+                row += f"{value:.4f}".ljust(15) + " | "
+            print(row)
+    
     # Export results to CSV if requested
     if export_csv:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -188,103 +254,6 @@ def compare_algorithms(maze_sizes: List[int], algorithms: List[Tuple[str, callab
                     writer.writerow(row)
         
         print(f"Results exported to {csv_filename}")
-    
-    # Calculate average relative metrics for each algorithm
-    print("\nCalculating average relative metrics...")
-    
-    # Get algorithm names
-    algo_names = [name for name, _, _, _ in algorithms]
-    
-    # Initialize relative metrics dictionaries
-    relative_nodes = {algo1: {algo2: [] for algo2 in algo_names} for algo1 in algo_names}
-    relative_time = {algo1: {algo2: [] for algo2 in algo_names} for algo1 in algo_names}
-    dfs_to_astar_path_length = []
-    
-    # Calculate relative metrics for each maze size
-    for size in maze_sizes:
-        valid_results = True
-        
-        # Check if all algorithms have valid results for this size
-        for name in algo_names:
-            if (name not in results[size] or 
-                'nodes_explored' not in results[size][name] or 
-                'time_taken' not in results[size][name] or
-                isinstance(results[size][name].get('error', None), str)):
-                valid_results = False
-                break
-        
-        if not valid_results:
-            continue
-        
-        # Calculate relative nodes explored
-        for algo1 in algo_names:
-            nodes1 = results[size][algo1]['nodes_explored']
-            for algo2 in algo_names:
-                nodes2 = results[size][algo2]['nodes_explored']
-                if nodes2 > 0:  # Avoid division by zero
-                    relative_nodes[algo1][algo2].append(nodes1 / nodes2)
-        
-        # Calculate relative time taken
-        for algo1 in algo_names:
-            time1 = results[size][algo1]['time_taken']
-            for algo2 in algo_names:
-                time2 = results[size][algo2]['time_taken']
-                if time2 > 0:  # Avoid division by zero
-                    relative_time[algo1][algo2].append(time1 / time2)
-        
-        # Calculate DFS path length relative to A* (Manhattan)
-        if 'DFS' in results[size] and 'A* (Manhattan)' in results[size]:
-            dfs_path = results[size]['DFS']['path_length']
-            astar_path = results[size]['A* (Manhattan)']['path_length']
-            if astar_path > 0:  # Avoid division by zero
-                dfs_to_astar_path_length.append(dfs_path / astar_path)
-    
-    # Calculate averages
-    avg_relative_nodes = {algo1: {algo2: np.mean(values) if values else float('nan') 
-                                 for algo2, values in algos.items()} 
-                         for algo1, algos in relative_nodes.items()}
-    
-    avg_relative_time = {algo1: {algo2: np.mean(values) if values else float('nan') 
-                                for algo2, values in algos.items()} 
-                        for algo1, algos in relative_time.items()}
-    
-    avg_dfs_to_astar_path = np.mean(dfs_to_astar_path_length) if dfs_to_astar_path_length else float('nan')
-    
-    # Print average relative nodes explored
-    print("\nAverage Relative Nodes Explored (rows relative to columns):")
-    print("=" * 80)
-    header = "Algorithm".ljust(20) + " | " + " | ".join(name.ljust(15) for name in algo_names)
-    print(header)
-    print("-" * len(header))
-    
-    for algo1 in algo_names:
-        row = algo1.ljust(20) + " | "
-        for algo2 in algo_names:
-            value = avg_relative_nodes[algo1][algo2]
-            if np.isnan(value):
-                row += "N/A".ljust(15) + " | "
-            else:
-                row += f"{value:.4f}".ljust(15) + " | "
-        print(row)
-    
-    # Print average relative time taken
-    print("\nAverage Relative Time Taken (rows relative to columns):")
-    print("=" * 80)
-    print(header)
-    print("-" * len(header))
-    
-    for algo1 in algo_names:
-        row = algo1.ljust(20) + " | "
-        for algo2 in algo_names:
-            value = avg_relative_time[algo1][algo2]
-            if np.isnan(value):
-                row += "N/A".ljust(15) + " | "
-            else:
-                row += f"{value:.4f}".ljust(15) + " | "
-        print(row)
-    
-    # Print DFS path length relative to A*
-    print(f"\nAverage DFS Path Length Relative to A* (Manhattan): {avg_dfs_to_astar_path:.4f}")
     
     return results
 

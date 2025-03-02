@@ -56,7 +56,7 @@ class BaseMazeSolver(ABC):
     @abstractmethod
     def solve(self) -> Tuple[List[Tuple[int, int]], Dict, Set[Tuple[int, int]]]:
         """
-        Abstract method to be implemented by concrete solver classes.
+        Abstract method to be implemented by actual solver classes.
         
         Returns:
             Tuple containing:

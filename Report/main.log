@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2025.2.11)  2 MAR 2025 18:43
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2025.2.11)  2 MAR 2025 20:42
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -282,12 +282,12 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <8> on input line 14.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <6> on input line 14.
-<PerfectMaze.png, id=55, 722.7pt x 722.7pt>
+<PerfectMaze.png, id=59, 722.7pt x 722.7pt>
 File: PerfectMaze.png Graphic file (type png)
 <use PerfectMaze.png>
 Package pdftex.def Info: PerfectMaze.png  used on input line 43.
 (pdftex.def)             Requested size: 203.83417pt x 203.8323pt.
-<ImperfectMaze.png, id=57, 722.7pt x 722.7pt>
+<ImperfectMaze.png, id=61, 722.7pt x 722.7pt>
 File: ImperfectMaze.png Graphic file (type png)
 <use ImperfectMaze.png>
 Package pdftex.def Info: ImperfectMaze.png  used on input line 50.
@@ -299,17 +299,17 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 [1
 
 {/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-<comparison_perfect_nodes_explored.png, id=77, 722.7pt x 433.62pt>
+<comparison_perfect_nodes_explored.png, id=81, 722.7pt x 433.62pt>
 File: comparison_perfect_nodes_explored.png Graphic file (type png)
 <use comparison_perfect_nodes_explored.png>
 Package pdftex.def Info: comparison_perfect_nodes_explored.png  used on input line 70.
 (pdftex.def)             Requested size: 221.95676pt x 133.17029pt.
-<comparison_perfect_time_taken.png, id=78, 722.7pt x 433.62pt>
+<comparison_perfect_time_taken.png, id=82, 722.7pt x 433.62pt>
 File: comparison_perfect_time_taken.png Graphic file (type png)
 <use comparison_perfect_time_taken.png>
 Package pdftex.def Info: comparison_perfect_time_taken.png  used on input line 76.
 (pdftex.def)             Requested size: 221.95676pt x 133.17029pt.
-<Solutions_perfectt.png, id=81, 1300.86pt x 505.1673pt>
+<Solutions_perfectt.png, id=85, 1300.86pt x 505.1673pt>
 File: Solutions_perfectt.png Graphic file (type png)
 <use Solutions_perfectt.png>
 Package pdftex.def Info: Solutions_perfectt.png  used on input line 90.
@@ -323,37 +323,59 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <7> on input line 101.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 101.
-<Time Taken imperfect.png, id=96, 722.7pt x 433.62pt>
+<Time Taken imperfect.png, id=100, 722.7pt x 433.62pt>
 File: Time Taken imperfect.png Graphic file (type png)
 <use Time Taken imperfect.png>
-Package pdftex.def Info: Time Taken imperfect.png  used on input line 122.
+Package pdftex.def Info: Time Taken imperfect.png  used on input line 124.
 (pdftex.def)             Requested size: 221.95676pt x 133.17029pt.
-<Nodes Explored imperfect.png, id=97, 722.7pt x 433.62pt>
+<Nodes Explored imperfect.png, id=101, 722.7pt x 433.62pt>
 File: Nodes Explored imperfect.png Graphic file (type png)
 <use Nodes Explored imperfect.png>
-Package pdftex.def Info: Nodes Explored imperfect.png  used on input line 128.
+Package pdftex.def Info: Nodes Explored imperfect.png  used on input line 130.
 (pdftex.def)             Requested size: 221.95676pt x 133.17029pt.
- [3 <./Solutions_perfectt.png> <./Time Taken imperfect.png> <./Nodes Explored imperfect.png>] [4] (./main.aux)
+ [3 <./Solutions_perfectt.png> <./Time Taken imperfect.png> <./Nodes Explored imperfect.png>]
+<imperfect maze solutions search.png, id=115, 1300.86pt x 485.6544pt>
+File: imperfect maze solutions search.png Graphic file (type png)
+<use imperfect maze solutions search.png>
+Package pdftex.def Info: imperfect maze solutions search.png  used on input line 162.
+(pdftex.def)             Requested size: 452.9679pt x 169.10715pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[4 <./imperfect maze solutions search.png>]
+<Value iteration vs. policy time .png, id=130, 722.7pt x 433.62pt>
+File: Value iteration vs. policy time .png Graphic file (type png)
+<use Value iteration vs. policy time .png>
+Package pdftex.def Info: Value iteration vs. policy time .png  used on input line 216.
+(pdftex.def)             Requested size: 452.9679pt x 271.77934pt.
+ [5 <./Value iteration vs. policy time .png>]
+<all algos time.png, id=138, 722.7pt x 433.62pt>
+File: all algos time.png Graphic file (type png)
+<use all algos time.png>
+Package pdftex.def Info: all algos time.png  used on input line 236.
+(pdftex.def)             Requested size: 452.9679pt x 271.77934pt.
+ [6{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc} <./all algos time.png>] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-02-20>
  ***********
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 7EC29B7F481B99EF3C300B5A47AE3FDE;1938.
+(rerunfilecheck)             Checksum: 1D4A31ED80CA8768952BB90CDCA5E6D4;2111.
  ) 
 Here is how much of TeX's memory you used:
- 10347 strings out of 474116
- 167515 string characters out of 5743682
+ 10386 strings out of 474116
+ 168600 string characters out of 5743682
  1942187 words of memory out of 5000000
- 32594 multiletter control sequences out of 15000+600000
- 563137 words of font info for 53 fonts, out of 8000000 for 9000
+ 32624 multiletter control sequences out of 15000+600000
+ 563472 words of font info for 54 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,8n,79p,773b,528s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on main.pdf (4 pages, 459463 bytes).
+ 75i,10n,79p,773b,528s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb>
+Output written on main.pdf (6 pages, 627604 bytes).
 PDF statistics:
- 162 PDF objects out of 1000 (max. 8388607)
- 122 compressed objects within 2 object streams
- 28 named destinations out of 1000 (max. 500000)
- 132 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 215 PDF objects out of 1000 (max. 8388607)
+ 157 compressed objects within 2 object streams
+ 35 named destinations out of 1000 (max. 500000)
+ 155 words of extra memory for PDF output out of 10000 (max. 10000000)
 

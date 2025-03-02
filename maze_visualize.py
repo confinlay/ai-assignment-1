@@ -23,7 +23,7 @@ Command-line arguments:
   --search: Run only search algorithms (DFS, BFS, A*)
   --mdp: Run only MDP algorithms (Value Iteration, Policy Iteration)
   --include-heuristics: Include all A* heuristics (manhattan, euclidean, diagonal)
-  --maze-type: Type of maze to generate (perfect, imperfect) [default: perfect]
+  --maze-type: Type of maze to generate (perfect, imperfect) [default: imperfect]
   --removal-percentage: Percentage of walls to remove for non-perfect mazes [default: 0.1]
 """
 
@@ -94,8 +94,8 @@ def visualize_algorithms(maze_size: int, algorithms, maze_type: str = 'perfect',
         maze = maze_gen.generate_imperfect(removal_percentage=removal_percentage)
         print(f"Generated an imperfect maze with {removal_percentage*100:.1f}% walls removed")
     else:
-        print(f"Unknown maze type: {maze_type}. Using perfect maze instead.")
-        maze = maze_gen.generate()
+        print(f"Unknown maze type: {maze_type}. Using imperfect maze instead.")
+        maze = maze_gen.generate_imperfect(removal_percentage=0.1)
     
     # Create a MazeSolutionVisualizer instance
     visualizer = MazeSolutionVisualizer(maze, maze_gen.entrance, maze_gen.exit)
@@ -137,7 +137,7 @@ def main():
     
     # Maze type options
     parser.add_argument('--maze-type', type=str, choices=['perfect', 'imperfect'], 
-                        default='perfect', help='Type of maze to generate')
+                        default='imperfect', help='Type of maze to generate')
     parser.add_argument('--removal-percentage', type=float, default=0.1,
                         help='Percentage of internal walls to remove (0.0 to 1.0) for non-perfect mazes')
     
