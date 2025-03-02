@@ -189,6 +189,103 @@ def compare_algorithms(maze_sizes: List[int], algorithms: List[Tuple[str, callab
         
         print(f"Results exported to {csv_filename}")
     
+    # Calculate average relative metrics for each algorithm
+    print("\nCalculating average relative metrics...")
+    
+    # Get algorithm names
+    algo_names = [name for name, _, _, _ in algorithms]
+    
+    # Initialize relative metrics dictionaries
+    relative_nodes = {algo1: {algo2: [] for algo2 in algo_names} for algo1 in algo_names}
+    relative_time = {algo1: {algo2: [] for algo2 in algo_names} for algo1 in algo_names}
+    dfs_to_astar_path_length = []
+    
+    # Calculate relative metrics for each maze size
+    for size in maze_sizes:
+        valid_results = True
+        
+        # Check if all algorithms have valid results for this size
+        for name in algo_names:
+            if (name not in results[size] or 
+                'nodes_explored' not in results[size][name] or 
+                'time_taken' not in results[size][name] or
+                isinstance(results[size][name].get('error', None), str)):
+                valid_results = False
+                break
+        
+        if not valid_results:
+            continue
+        
+        # Calculate relative nodes explored
+        for algo1 in algo_names:
+            nodes1 = results[size][algo1]['nodes_explored']
+            for algo2 in algo_names:
+                nodes2 = results[size][algo2]['nodes_explored']
+                if nodes2 > 0:  # Avoid division by zero
+                    relative_nodes[algo1][algo2].append(nodes1 / nodes2)
+        
+        # Calculate relative time taken
+        for algo1 in algo_names:
+            time1 = results[size][algo1]['time_taken']
+            for algo2 in algo_names:
+                time2 = results[size][algo2]['time_taken']
+                if time2 > 0:  # Avoid division by zero
+                    relative_time[algo1][algo2].append(time1 / time2)
+        
+        # Calculate DFS path length relative to A* (Manhattan)
+        if 'DFS' in results[size] and 'A* (Manhattan)' in results[size]:
+            dfs_path = results[size]['DFS']['path_length']
+            astar_path = results[size]['A* (Manhattan)']['path_length']
+            if astar_path > 0:  # Avoid division by zero
+                dfs_to_astar_path_length.append(dfs_path / astar_path)
+    
+    # Calculate averages
+    avg_relative_nodes = {algo1: {algo2: np.mean(values) if values else float('nan') 
+                                 for algo2, values in algos.items()} 
+                         for algo1, algos in relative_nodes.items()}
+    
+    avg_relative_time = {algo1: {algo2: np.mean(values) if values else float('nan') 
+                                for algo2, values in algos.items()} 
+                        for algo1, algos in relative_time.items()}
+    
+    avg_dfs_to_astar_path = np.mean(dfs_to_astar_path_length) if dfs_to_astar_path_length else float('nan')
+    
+    # Print average relative nodes explored
+    print("\nAverage Relative Nodes Explored (rows relative to columns):")
+    print("=" * 80)
+    header = "Algorithm".ljust(20) + " | " + " | ".join(name.ljust(15) for name in algo_names)
+    print(header)
+    print("-" * len(header))
+    
+    for algo1 in algo_names:
+        row = algo1.ljust(20) + " | "
+        for algo2 in algo_names:
+            value = avg_relative_nodes[algo1][algo2]
+            if np.isnan(value):
+                row += "N/A".ljust(15) + " | "
+            else:
+                row += f"{value:.4f}".ljust(15) + " | "
+        print(row)
+    
+    # Print average relative time taken
+    print("\nAverage Relative Time Taken (rows relative to columns):")
+    print("=" * 80)
+    print(header)
+    print("-" * len(header))
+    
+    for algo1 in algo_names:
+        row = algo1.ljust(20) + " | "
+        for algo2 in algo_names:
+            value = avg_relative_time[algo1][algo2]
+            if np.isnan(value):
+                row += "N/A".ljust(15) + " | "
+            else:
+                row += f"{value:.4f}".ljust(15) + " | "
+        print(row)
+    
+    # Print DFS path length relative to A*
+    print(f"\nAverage DFS Path Length Relative to A* (Manhattan): {avg_dfs_to_astar_path:.4f}")
+    
     return results
 
 
@@ -197,9 +294,9 @@ def main():
     parser = argparse.ArgumentParser(description='Run and compare maze solving algorithms')
     
     # Maze size options
-    parser.add_argument('--sizes', type=int, nargs='+', default=[50, 100, 150, 200, 250],
+    parser.add_argument('--sizes', type=int, nargs='+', 
+                        default=[50*i for i in range(1, 41)],  # 0 to 2000 in increments of 50
                         help='Maze sizes to test (odd numbers recommended)')
-    
     # Algorithm selection
     parser.add_argument('--search', action='store_true', help='Run search algorithms (DFS, BFS, A*)')
     parser.add_argument('--mdp', action='store_true', help='Run MDP algorithms (Value Iteration, Policy Iteration)')

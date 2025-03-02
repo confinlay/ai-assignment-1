@@ -132,35 +132,41 @@ class BFSMazeSolver(BaseMazeSolver):
             - Set of all visited nodes
         """
         start_time = time.time()
-        queue = deque([(self.start, [self.start])])
+        queue = deque([self.start])
         visited = {self.start}
         nodes_explored = 0
+        parent = {self.start: None}
+        found_goal = False
         
         while queue:
-            current, path = queue.popleft()
+            current = queue.popleft()
             nodes_explored += 1
             
             if current == self.end:
-                end_time = time.time()
-                metrics = {
-                    'nodes_explored': nodes_explored,
-                    'time_taken': end_time - start_time,
-                    'path_length': len(path)
-                }
-                return path, metrics, visited
+                found_goal = True
+                break
             
             for neighbor in self.get_neighbors(current):
                 if neighbor not in visited:
                     visited.add(neighbor)
-                    queue.append((neighbor, path + [neighbor]))
+                    parent[neighbor] = current
+                    queue.append(neighbor)
+        
+        path = []
+        if found_goal:
+            current = self.end
+            while current:
+                path.append(current)
+                current = parent[current]
+            path.reverse()
         
         end_time = time.time()
         metrics = {
             'nodes_explored': nodes_explored,
             'time_taken': end_time - start_time,
-            'path_length': 0  # No path found
+            'path_length': len(path)
         }
-        return [], metrics, visited  # No path found
+        return path, metrics, visited
 
 
 class AStarMazeSolver(BaseMazeSolver):
@@ -227,17 +233,19 @@ class AStarMazeSolver(BaseMazeSolver):
         start_time = time.time()
         nodes_explored = 0
         visited = set()
+        parent = {self.start: None}
+        found_goal = False
         
-        # Priority queue entries are: (f_score, node_counter, current_pos, path)
+        # Priority queue entries are: (f_score, node_counter, current_pos)
         # The node_counter is used as a tiebreaker for equal f_scores
         start_h_score = h_func(self.start)
         counter = 0  # Counter for tiebreaking
-        pq = [(start_h_score, counter, self.start, [self.start])]
+        pq = [(start_h_score, counter, self.start)]
         # Keep track of g_scores (path length to reach each position)
         g_scores = {self.start: 0}
         
         while pq:
-            _, _, current, path = heapq.heappop(pq)
+            _, _, current = heapq.heappop(pq)
             nodes_explored += 1
             
             # If we've already processed this position, skip it
@@ -247,13 +255,8 @@ class AStarMazeSolver(BaseMazeSolver):
             visited.add(current)
             
             if current == self.end:
-                end_time = time.time()
-                metrics = {
-                    'nodes_explored': nodes_explored,
-                    'time_taken': end_time - start_time,
-                    'path_length': len(path)
-                }
-                return path, metrics, visited
+                found_goal = True
+                break
             
             for neighbor in self.get_neighbors(current):
                 # g_score is the length of the path to neighbor
@@ -263,15 +266,24 @@ class AStarMazeSolver(BaseMazeSolver):
                     g_scores[neighbor] = tentative_g_score
                     f_score = tentative_g_score + h_func(neighbor)
                     counter += 1  # Increment counter for unique priority
-                    heapq.heappush(pq, (f_score, counter, neighbor, path + [neighbor]))
+                    parent[neighbor] = current
+                    heapq.heappush(pq, (f_score, counter, neighbor))
         
+        path = []
+        if found_goal:
+            current = self.end
+            while current:
+                path.append(current)
+                current = parent[current]
+            path.reverse()
+            
         end_time = time.time()
         metrics = {
             'nodes_explored': nodes_explored,
             'time_taken': end_time - start_time,
-            'path_length': 0  # No path found
+            'path_length': len(path)
         }
-        return [], metrics, visited  # No path found
+        return path, metrics, visited  # No path found if path is empty
 
 
 class MazeSolutionVisualizer:
@@ -378,11 +390,13 @@ class MazeSolutionVisualizer:
             
             # Add a custom legend
             from matplotlib.patches import Patch
+            
+            # Create a sample of the actual colors used for this visualization
             legend_elements = [
                 Patch(facecolor='white', edgecolor='black', label='Path (unvisited)'),
                 Patch(facecolor='black', edgecolor='black', label='Wall'),
-                Patch(facecolor=light_color, edgecolor='black', label='Visited'),
-                Patch(facecolor=base_color, edgecolor='black', label='Solution path'),
+                Patch(facecolor=light_color, edgecolor='black', label=f'Visited cells'),
+                Patch(facecolor=base_color, edgecolor='black', label=f'Solution path'),
                 Patch(facecolor='green', edgecolor='black', label='Start'),
                 Patch(facecolor='red', edgecolor='black', label='End')
             ]
@@ -481,8 +495,8 @@ class MazeSolutionVisualizer:
             legend_elements = [
                 Patch(facecolor='white', edgecolor='black', label='Path (unvisited)'),
                 Patch(facecolor='black', edgecolor='black', label='Wall'),
-                Patch(facecolor='lightblue', edgecolor='black', label='Visited (generic)'),
-                Patch(facecolor='blue', edgecolor='black', label='Solution path (generic)'),
+                Patch(facecolor='lightgray', edgecolor='black', label='Visited cells (lighter shade)'),
+                Patch(facecolor='dimgray', edgecolor='black', label='Solution path (darker shade)'),
                 Patch(facecolor='green', edgecolor='black', label='Start'),
                 Patch(facecolor='red', edgecolor='black', label='End')
             ]
@@ -572,9 +586,9 @@ if __name__ == "__main__":
     from maze_generator import Maze
     
     # Create a maze
-    size = 150  # More reasonable size for visualization
+    size = 50  # More reasonable size for visualization
     maze = Maze(size, size)
-    maze = maze.generate_imperfect(removal_percentage=0.3)
+    maze = maze.generate_imperfect(removal_percentage=0.1)
     
     # Create a solver
     solver = MazeSolver(maze)   
@@ -584,8 +598,8 @@ if __name__ == "__main__":
         ('DFS', solver.dfs, 'red'),
         ('BFS', solver.bfs, 'blue'),
         ('A* (Manhattan)', lambda: solver.astar('manhattan'), 'green'),
-        ('A* (Euclidean)', lambda: solver.astar('euclidean'), 'purple'),
-        ('A* (Diagonal)', lambda: solver.astar('diagonal'), 'orange')
+        # ('A* (Euclidean)', lambda: solver.astar('euclidean'), 'purple'),
+        # ('A* (Diagonal)', lambda: solver.astar('diagonal'), 'orange')
     ]
     
     # Run all algorithms and collect results
